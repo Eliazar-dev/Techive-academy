@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { CheckCircle2, Circle, Lock, Video, FileText, Download, Award, ExternalLink, Printer } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { useContent } from '../lib/content'
 import { useSEO } from '../components/ui'
 import { videoEmbed } from '../lib/academy'
 
@@ -14,7 +15,7 @@ function LessonView({ lesson, onDone, busy }) {
       {v?.type === 'iframe' && <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-black"><iframe title={lesson.title} src={v.src} className="h-full w-full" allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen /></div>}
       {v?.type === 'video' && <video className="mt-4 w-full rounded-xl bg-black" src={v.src} controls />}
       {v?.type === 'link' && <a href={v.src} target="_blank" rel="noreferrer" className="btn-light mt-4"><ExternalLink size={16} />Open video</a>}
-      {lesson.body && <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-700">{lesson.body}</p>}
+      {lesson.body && <p className="mt-4 whitespace-pre-wrap leading-relaxed text-zinc-700">{lesson.body}</p>}
       {lesson.file_url && <a href={lesson.file_url} target="_blank" rel="noreferrer" className="btn-light mt-4"><Download size={16} />Download notes</a>}
       <div className="mt-6">{lesson.done ? <p className="font-semibold text-emerald-600">✔ Completed</p> : <button onClick={onDone} disabled={busy} className="btn-grad">{busy ? 'Saving…' : 'Mark as complete'}</button>}</div>
     </div>
@@ -43,7 +44,7 @@ function QuizBox({ slug, info, reload }) {
       {qs && (
         <div className="mt-5 space-y-6">
           {qs.map((q, n) => (
-            <fieldset key={q.id}><legend className="font-bold">{n + 1}. {q.text}</legend>
+            <fieldset key={q.id}><legend className="font-bold whitespace-pre-wrap">{n + 1}. {q.text}</legend>
               <div className="mt-2 space-y-2">{q.options.map((o, i) => (
                 <label key={i} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm ${ans[q.id] === i ? 'border-brand-blue bg-sky-50' : 'border-zinc-200'}`}>
                   <input type="radio" name={`q${q.id}`} checked={ans[q.id] === i} onChange={() => setAns({ ...ans, [q.id]: i })} className="accent-brand-blue" />{o}</label>))}</div></fieldset>))}
@@ -82,7 +83,7 @@ function ProjectBox({ slug, course, project, reload }) {
   )
 }
 
-function CertBox({ slug, data, pay, busy, reload, user }) {
+function CertBox({ slug, data, pay, busy, reload, user, content }) {
   const c = data.certificate
   const [err, setErr] = useState('')
   const claim = async () => { setErr(''); try { await api(`/academy/certificate/${slug}/`, { method: 'POST' }); reload() } catch (e) { setErr(e.message) } }
@@ -99,10 +100,12 @@ function CertBox({ slug, data, pay, busy, reload, user }) {
           <p className="mt-4 text-xs font-bold uppercase tracking-[.3em] text-zinc-500">Certificate of completion</p>
           <p className="mt-4 text-sm text-zinc-600">This certifies that</p>
           <p className="font-display text-3xl font-extrabold">{name}</p>
-          <p className="mt-3 text-sm text-zinc-600">has successfully completed</p>
+          <p className="mt-3 text-sm text-zinc-600">{content.certificate.wording}</p>
           <p className="font-display text-xl font-extrabold">{data.course.name}</p>
+          {content.certificate.signed_by && <p className="mt-4 text-sm text-zinc-600">Signed by {content.certificate.signed_by}</p>}
           <p className="mt-5 text-xs text-zinc-500">Issued {new Date(c.issued_at).toLocaleDateString('en-KE', { dateStyle: 'long' })} · Code {c.code}</p>
           <p className="text-xs text-zinc-500">Verify at {window.location.origin}/verify/{c.code}</p>
+          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-zinc-500">{content.certificate.issuer}</p>
         </div>
         <button onClick={() => window.print()} className="btn-dark mt-4 print:hidden"><Printer size={16} />Print / save as PDF</button>
       </section>
@@ -124,6 +127,7 @@ function CertBox({ slug, data, pay, busy, reload, user }) {
 export default function Learn() {
   const { slug } = useParams()
   const { user } = useAuth()
+  const content = useContent('academy_site')
   const [d, setD] = useState(null)
   const [err, setErr] = useState(null)
   const [cur, setCur] = useState(null)
@@ -162,7 +166,7 @@ export default function Learn() {
       {d.locked && (
         <div className="mt-8 rounded-2xl border border-violet-200 bg-violet-50 p-6">
           <h2 className="flex items-center gap-2 text-xl font-extrabold"><Lock size={20} />Pay the course fee to unlock</h2>
-          <p className="mt-2 text-zinc-700">Course fee: <b>KES {Number(c.price).toLocaleString('en-KE')}</b>. Pay by M-Pesa (STK push) or card through Paystack.</p>
+          <p className="mt-2 text-zinc-700">Course fee: <b>KES {Number(c.price).toLocaleString('en-KE')}</b>. {content.payments.note}</p>
           {c.payment_plan && <p className="mt-2 whitespace-pre-line text-sm text-zinc-600">{c.payment_plan}</p>}
           {payErr && <p role="alert" className="mt-3 text-sm font-semibold text-red-600">{payErr}</p>}
           <button onClick={() => pay('enrollment')} disabled={busy} className="btn-grad mt-5">{busy ? 'Opening Paystack…' : `Pay KES ${Number(c.price).toLocaleString('en-KE')}`}</button>
@@ -202,7 +206,7 @@ export default function Learn() {
           {!d.locked && <>
             <QuizBox slug={slug} info={d.quiz} reload={load} />
             <ProjectBox key={d.project?.status} slug={slug} course={c} project={d.project} reload={load} />
-            <CertBox slug={slug} data={d} pay={pay} busy={busy} reload={load} user={user} />
+            <CertBox slug={slug} data={d} pay={pay} busy={busy} reload={load} user={user} content={content} />
             {payErr && <p role="alert" className="text-sm font-semibold text-red-600">{payErr}</p>}
           </>}
           {d.next_course && d.certificate.code && (

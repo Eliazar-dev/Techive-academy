@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Menu, X, LogOut } from 'lucide-react'
+import { Menu, X, LogOut, MessageCircle } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { useContent } from '../lib/content'
 import { Avatar } from './ui'
 import { MAIN_SITE } from '../data'
 
 export default function Layout() {
   const { user, logout } = useAuth()
+  const content = useContent('academy_site')
   const [open, setOpen] = useState(false)
   const nav = useNavigate()
   const link = ({ isActive }) => `rounded-full px-4 py-2 text-sm font-semibold transition ${isActive ? 'bg-ink text-white' : 'text-zinc-700 hover:bg-zinc-100'}`
@@ -44,8 +46,21 @@ export default function Layout() {
       <main className="flex-1"><Outlet /></main>
       <footer className="border-t border-zinc-200 bg-white py-8 text-sm text-zinc-600">
         <div className="container-x flex flex-col items-center justify-between gap-3 sm:flex-row">
-          <p>© {new Date().getFullYear()} Techive IT Solutions. Techive Academy.</p>
-          <a href={MAIN_SITE} className="font-semibold hover:text-ink">techive.co.ke</a>
+          <div className="text-center sm:text-left">
+            <p>© {new Date().getFullYear()} Techive IT Solutions. Techive Academy.</p>
+            {content.footer.text && <p className="mt-1 text-xs">{content.footer.text}</p>}
+          </div>
+          <div className="flex flex-col items-center gap-2 sm:items-end">
+            {content.footer.email && <a href={`mailto:${content.footer.email}`} className="hover:text-ink">{content.footer.email}</a>}
+            {content.footer.phone && <a href={`tel:${content.footer.phone}`} className="hover:text-ink">{content.footer.phone}</a>}
+            {content.whatsapp?.url && (
+              <a href={content.whatsapp.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-ink">
+                <MessageCircle size={16} />
+                {content.whatsapp.label}
+              </a>
+            )}
+            <a href={MAIN_SITE} className="font-semibold hover:text-ink">techive.co.ke</a>
+          </div>
         </div>
       </footer>
     </div>
