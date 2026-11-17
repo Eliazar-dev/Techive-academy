@@ -59,7 +59,7 @@ export default function Layout() {
                 {content.whatsapp.label}
               </a>
             )}
-            <a href={MAIN_SITE} className="font-semibold hover:text-ink">techive.co.ke</a>
+            <a href={MAIN_SITE} className="font-semibold hover:text-ink">techiveitsolution.co.ke</a>
           </div>
         </div>
       </footer>

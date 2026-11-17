@@ -3,7 +3,7 @@ export const AUTH_COURSES = [
   { name: 'Certified Free Python Programming', track: 'Free course', blurb: 'Learn Python from zero in 4 weeks and build your first programs.' },
   { name: 'Certified Computer Packages', track: 'Live classes', blurb: 'Word, Excel, PowerPoint and more. 2 months of live Google Meet classes.' },
 ]
-export const MAIN_SITE = import.meta.env.VITE_MAIN_SITE_URL || 'https://techive.co.ke'
+export const MAIN_SITE = import.meta.env.VITE_MAIN_SITE_URL || 'https://techiveitsolution.co.ke'
 export const WHATSAPP = import.meta.env.VITE_WHATSAPP || ''
 export const kes = (n) => `KES ${Number(n).toLocaleString('en-KE')}`
 
