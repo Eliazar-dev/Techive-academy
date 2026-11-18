@@ -13,6 +13,7 @@ const PayReturn = lazy(() => import('./pages/PayReturn'))
 const Verify = lazy(() => import('./pages/Verify'))
 const Auth = lazy(() => import('./pages/Auth'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const CheckIn = lazy(() => import('./pages/CheckIn'))
 
 export default function App() {
   useEffect(captureRef, [])
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="pay/return" element={<RequireAuth><PayReturn /></RequireAuth>} />
           <Route path="verify" element={<Verify />} />
           <Route path="verify/:code" element={<Verify />} />
+          <Route path="checkin/:token" element={<CheckIn />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
