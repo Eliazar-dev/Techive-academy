@@ -10,18 +10,12 @@ const ICONS = { Register: GraduationCap, Learn: Wallet, 'Get certified': Award, 
 
 export default function Home() {
   const c = useContent('academy_site')
-  useSEO('', 'Free certified courses in website development with AI and Python, plus live Computer Packages classes. Techive Academy, Kenya.')
+  useSEO('Home', 'Free certified courses in website development with AI and Python, plus live Computer Packages classes. Techive Academy, Kenya.', 'https://academy.techiveitsolution.co.ke/')
   const [courses, setCourses] = useState(null)
   const [err, setErr] = useState('')
   useEffect(() => { api('/academy/courses/').then((r) => setCourses(Array.isArray(r) ? r : r.results || [])).catch((e) => setErr(e.message)) }, [])
   return (
     <>
-      {c.announcement?.text && (
-        <div className="bg-brand-blue text-center text-sm font-semibold text-white py-2 px-4">
-          {c.announcement.text}
-        </div>
-      )}
-
       <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-white to-violet-50">
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-cyan/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-10 h-96 w-96 rounded-full bg-brand-violet/20 blur-3xl" />
