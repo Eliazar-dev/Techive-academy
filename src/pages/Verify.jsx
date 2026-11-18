@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { useSEO } from '../components/ui'
 
 export default function Verify() {
-  useSEO('Verify a certificate')
+  useSEO('Verify a certificate', 'Verify the authenticity of a Techive Academy certificate using its code.', 'https://academy.techiveitsolution.co.ke/verify')
   const { code } = useParams()
   const nav = useNavigate()
   const [input, setInput] = useState(code || '')

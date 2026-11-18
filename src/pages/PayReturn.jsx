@@ -5,7 +5,7 @@ import { useSEO } from '../components/ui'
 
 // Paystack sends the student back here with ?reference=…  We ask the server to confirm it.
 export default function PayReturn() {
-  useSEO('Payment')
+  useSEO('Payment', '', undefined, '/logo.png', true)
   const [qs] = useSearchParams()
   const nav = useNavigate()
   const ref = qs.get('reference') || qs.get('trxref')

@@ -45,9 +45,9 @@ export const DEFAULTS = {
       signed_by: '',
     },
     footer: {
-      text: '',
-      email: '',
-      phone: '',
+      text: 'Thika Town, Kiambu County, Kenya',
+      email: 'techiveitsolutions.com@gmail.com',
+      phone: '+254740492907',
     },
   },
 }

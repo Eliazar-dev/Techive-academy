@@ -133,7 +133,7 @@ export default function Learn() {
   const [cur, setCur] = useState(null)
   const [busy, setBusy] = useState(false)
   const [payErr, setPayErr] = useState('')
-  useSEO(d?.course.name || 'Learn')
+  useSEO(d?.course.name || 'Learn', '', 'https://academy.techiveitsolution.co.ke/learn/' + slug, '/logo.png', true)
 
   const load = useCallback(() => api(`/academy/learn/${slug}/`).then(setD).catch(setErr), [slug])
   useEffect(() => { load() }, [load])

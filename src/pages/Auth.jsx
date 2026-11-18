@@ -210,7 +210,7 @@ function SignupFace({ academy, prefill, onDone, onLogin }) {
 }
 
 export default function Auth() {
-  useSEO('Login')
+  useSEO('Login', 'Sign in or create a Techive Academy account to learn and get certified.', 'https://academy.techiveitsolution.co.ke/auth', '/logo.png', true)
   const { login, user } = useAuth()
   const nav = useNavigate()
   const [qs] = useSearchParams()

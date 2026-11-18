@@ -16,7 +16,7 @@ export default function Course() {
   const [missing, setMissing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  useSEO(c?.name || 'Course', c?.description)
+  useSEO(c?.name || 'Course', c?.description, c?.slug ? `https://academy.techiveitsolution.co.ke/c/${c.slug}` : 'https://academy.techiveitsolution.co.ke/')
   useEffect(() => { api(`/academy/courses/${slug}/`).then(setC).catch(() => setMissing(true)) }, [slug])
 
   async function join() {

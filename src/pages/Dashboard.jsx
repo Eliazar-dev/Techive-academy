@@ -55,7 +55,7 @@ function Referral() {
 }
 
 export default function Dashboard() {
-  useSEO('My learning')
+  useSEO('My learning', '', 'https://academy.techiveitsolution.co.ke/dashboard', '/logo.png', true)
   const { user } = useAuth()
   const [regs, setRegs] = useState(null)
   useEffect(() => { api('/academy/registrations/').then((r) => setRegs(Array.isArray(r) ? r : r.results || [])).catch(() => setRegs([])) }, [])
