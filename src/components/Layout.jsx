@@ -4,6 +4,7 @@ import { Menu, X, LogOut, MessageCircle } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useContent } from '../lib/content'
 import { Avatar } from './ui'
+import Floaters from './Floaters'
 import { MAIN_SITE } from '../data'
 
 export default function Layout() {
@@ -63,6 +64,7 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+      <Floaters />
     </div>
   )
 }
