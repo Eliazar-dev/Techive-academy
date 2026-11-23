@@ -65,10 +65,17 @@ function ProjectBox({ slug, course, project, reload }) {
     e.preventDefault(); setBusy(true); setErr('')
     try { await api(`/academy/project/${slug}/`, { method: 'POST', body: f }); reload() } catch (x) { setErr(x.message) } finally { setBusy(false) }
   }
+  const requirements = Array.isArray(course.project_requirements) ? course.project_requirements : []
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-      <h2 className="text-xl font-extrabold">Final project</h2>
-      <p className="mt-2 whitespace-pre-line text-zinc-700">{course.project_brief}</p>
+      <h2 className="text-xl font-extrabold">{course.project_title || 'Final project'}</h2>
+      {course.project_brief && <p className="mt-2 whitespace-pre-line text-zinc-700">{course.project_brief}</p>}
+      {requirements.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-bold uppercase tracking-widest text-zinc-400">Requirements</p>
+          <ul className="mt-2 space-y-1.5">{requirements.map((r, i) => <li key={i} className="flex items-start gap-2 text-sm text-zinc-700"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-brand-cyan" />{r}</li>)}</ul>
+        </div>
+      )}
       {project && <p className={`mt-4 rounded-xl p-3 text-sm font-bold ${approved ? 'bg-emerald-50 text-emerald-700' : project.status === 'changes' ? 'bg-amber-50 text-amber-800' : 'bg-sky-50 text-sky-800'}`}>{approved ? 'Approved ✔' : project.status === 'changes' ? 'Changes requested' : 'Submitted: waiting for review'}</p>}
       {project?.feedback && <p className="mt-2 rounded-xl bg-zinc-50 p-3 text-sm"><b>Tutor feedback:</b> {project.feedback}</p>}
       {!approved && (
