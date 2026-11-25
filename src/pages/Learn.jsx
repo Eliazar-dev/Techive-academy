@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CheckCircle2, Circle, Lock, Video, FileText, Download, Award, ExternalLink, Printer } from 'lucide-react'
 import { api } from '../lib/api'
@@ -22,33 +22,83 @@ function LessonView({ lesson, onDone, busy }) {
   )
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
+// fetch with token + one silent refresh on 401 (mirrors api() but returns raw Response for files/CSV)
+async function authedFetch(path, opts = {}) {
+  const t = api.tokens.get()
+  const go = (access) => fetch(`${API_BASE}${path}`, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${access}` } })
+  let res = await go(t?.access)
+  if (res.status === 401 && t?.refresh) {
+    const r = await fetch(`${API_BASE}/auth/token/refresh/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh: t.refresh }) })
+    if (r.ok) {
+      const d = await r.json()
+      api.tokens.set({ ...t, access: d.access, ...(d.refresh && { refresh: d.refresh }) }, !!localStorage.getItem('techive_tokens'))
+      res = await go(d.access)
+    }
+  }
+  return res
+}
+
+async function downloadFile(path, filename) {
+  const res = await authedFetch(path)
+  if (!res.ok) { alert('Download failed. Please try again.'); return }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
+}
+
 function QuizBox({ slug, info, reload }) {
   const [qs, setQs] = useState(null)
   const [ans, setAns] = useState({})
   const [res, setRes] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [left, setLeft] = useState(null)
+  const submitRef = useRef(null)
+  const exhausted = info.max_attempts != null && info.attempts_used >= info.max_attempts
   if (!info.count) return null
   const start = async () => { setErr(''); try { const r = await api(`/academy/quiz/${slug}/`); setQs(r.questions); setAns({}); setRes(null) } catch (e) { setErr(e.message) } }
-  const submit = async () => {
+  const submit = useCallback(async (auto = false) => {
+    if (busy) return
     setBusy(true); setErr('')
-    try { setRes(await api(`/academy/quiz/${slug}/`, { method: 'POST', body: { answers: ans } })); setQs(null); reload() } catch (e) { setErr(e.message) } finally { setBusy(false) }
-  }
+    try { setRes(await api(`/academy/quiz/${slug}/`, { method: 'POST', body: { answers: ans } })); setQs(null); setLeft(null); reload() } catch (e) { setErr(e.message); if (!auto) setQs(null) } finally { setBusy(false) }
+  }, [ans, busy, slug, reload])
+  submitRef.current = submit
+  useEffect(() => {
+    if (!qs || !info.time_limit) { setLeft(null); return }
+    setLeft(info.time_limit * 60)
+    const t = setInterval(() => setLeft((s) => (s === null ? s : s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [qs, info.time_limit])
+  useEffect(() => { if (left === 0 && qs) submitRef.current?.(true) }, [left, qs]) // eslint-disable-line react-hooks/exhaustive-deps
+  const mm = left === null ? null : `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`
+  const attemptsText = info.max_attempts ? `Attempts: ${info.attempts_used}/${info.max_attempts}` : `Attempts used: ${info.attempts_used}`
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-      <h2 className="text-xl font-extrabold">Quiz</h2>
-      <p className="mt-1 text-sm text-zinc-600">{info.count} questions. Pass mark {info.pass_mark}%. You can retry as many times as you need.{info.best !== null && <> Best score: <b>{info.best}%</b> {info.passed && '✔'}</>}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-extrabold">Quiz</h2>
+          <p className="mt-1 text-sm text-zinc-600">{info.count} questions. Pass mark {info.pass_mark}%.{info.time_limit ? ` Time limit ${info.time_limit} min.` : ''} {attemptsText}.{info.best !== null && <> Best score: <b>{info.best}%</b> {info.passed && '✔'}</>}</p>
+        </div>
+        <button onClick={() => downloadFile('/academy/quiz-attempts/', 'my-quiz-results.csv')} className="btn-light !px-3 !py-1.5 text-xs"><Download size={14} className="mr-1 inline" />My results (CSV)</button>
+      </div>
       {err && <p role="alert" className="mt-3 text-sm text-red-600">{err}</p>}
       {res && <p className={`mt-4 rounded-xl p-4 font-bold ${res.passed ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>{res.passed ? `Passed! ${res.score}%` : `You scored ${res.score}%. Review the lessons and try again.`}</p>}
-      {!qs && <button onClick={start} className="btn-dark mt-4">{info.best === null ? 'Start quiz' : 'Retake quiz'}</button>}
+      {exhausted && <p className="mt-4 rounded-xl bg-zinc-100 p-4 text-sm font-semibold text-zinc-600">You have used all your quiz attempts for this course.</p>}
+      {!qs && !exhausted && <button onClick={start} className="btn-dark mt-4">{info.best === null ? 'Start quiz' : 'Retake quiz'}</button>}
       {qs && (
         <div className="mt-5 space-y-6">
+          {mm && <p className={`rounded-xl px-4 py-2 text-center font-mono text-lg font-extrabold ${left <= 60 ? 'bg-red-50 text-red-600' : 'bg-sky-50 text-sky-700'}`}>⏱ {mm} remaining</p>}
           {qs.map((q, n) => (
             <fieldset key={q.id}><legend className="font-bold whitespace-pre-wrap">{n + 1}. {q.text}</legend>
               <div className="mt-2 space-y-2">{q.options.map((o, i) => (
                 <label key={i} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm ${ans[q.id] === i ? 'border-brand-blue bg-sky-50' : 'border-zinc-200'}`}>
                   <input type="radio" name={`q${q.id}`} checked={ans[q.id] === i} onChange={() => setAns({ ...ans, [q.id]: i })} className="accent-brand-blue" />{o}</label>))}</div></fieldset>))}
-          <button onClick={submit} disabled={busy || Object.keys(ans).length < qs.length} className="btn-grad">{busy ? 'Marking…' : 'Submit answers'}</button>
+          <button onClick={() => submit(false)} disabled={busy || Object.keys(ans).length < qs.length} className="btn-grad">{busy ? 'Marking…' : 'Submit answers'}</button>
         </div>
       )}
     </section>
@@ -156,22 +206,7 @@ export default function Learn() {
     setBusy(true)
     try { await api(`/academy/lessons/${id}/complete/`, { method: 'POST' }); await load() } finally { setBusy(false) }
   }
-  async function downloadNotes(id) {
-    try {
-      const t = api.tokens.get()
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/academy/sessions/${id}/notes/`, { headers: { Authorization: `Bearer ${t?.access}` } })
-      if (!res.ok) { alert('Could not download the notes.'); return }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `session-${id}-notes.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 60000)
-    } catch { alert('Could not download the notes. Check your connection and try again.') }
-  }
+  const downloadNotes = (id) => downloadFile(`/academy/sessions/${id}/notes/`, `session-${id}-notes.pdf`)
 
   if (err) return (
     <div className="container-x py-24 text-center"><h1 className="text-2xl font-extrabold">{err.status === 403 ? 'You are not registered for this course' : 'Could not load the course'}</h1>
