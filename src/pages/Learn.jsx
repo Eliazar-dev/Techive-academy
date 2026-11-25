@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CheckCircle2, Circle, Lock, Video, FileText, Download, Award, ExternalLink, Printer } from 'lucide-react'
-import { api } from '../lib/api'
+import { api, tokens } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useContent } from '../lib/content'
 import { useSEO } from '../components/ui'
@@ -26,14 +26,14 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // fetch with token + one silent refresh on 401 (mirrors api() but returns raw Response for files/CSV)
 async function authedFetch(path, opts = {}) {
-  const t = api.tokens.get()
+  const t = tokens.get()
   const go = (access) => fetch(`${API_BASE}${path}`, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${access}` } })
   let res = await go(t?.access)
   if (res.status === 401 && t?.refresh) {
     const r = await fetch(`${API_BASE}/auth/token/refresh/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh: t.refresh }) })
     if (r.ok) {
       const d = await r.json()
-      api.tokens.set({ ...t, access: d.access, ...(d.refresh && { refresh: d.refresh }) }, !!localStorage.getItem('techive_tokens'))
+      tokens.set({ ...t, access: d.access, ...(d.refresh && { refresh: d.refresh }) }, !!localStorage.getItem('techive_tokens'))
       res = await go(d.access)
     }
   }
