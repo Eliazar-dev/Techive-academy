@@ -86,6 +86,16 @@ function QuizBox({ slug, info, reload }) {
         </div>
         <button onClick={() => downloadFile('/academy/quiz-attempts/', 'my-quiz-results.csv')} className="btn-light !px-3 !py-1.5 text-xs"><Download size={14} className="mr-1 inline" />My results (CSV)</button>
       </div>
+      {(info.max_attempts || info.time_limit) && (
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+          <p className="font-extrabold uppercase tracking-widest text-sky-600">Quiz rules</p>
+          <ul className="mt-2 space-y-1">
+            {info.time_limit && <li>⏱ <b>Time limit: {info.time_limit} minutes</b> — the timer starts when you begin and the quiz submits automatically at 0:00.</li>}
+            {info.max_attempts && <li>🔁 <b>Attempts: {info.attempts_used} of {info.max_attempts} used</b> — each submit counts as one attempt, even if you close the page.</li>}
+            <li>🎯 <b>Pass mark: {info.pass_mark}%</b></li>
+          </ul>
+        </div>
+      )}
       {err && <p role="alert" className="mt-3 text-sm text-red-600">{err}</p>}
       {res && <p className={`mt-4 rounded-xl p-4 font-bold ${res.passed ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>{res.passed ? `Passed! ${res.score}%` : `You scored ${res.score}%. Review the lessons and try again.`}</p>}
       {exhausted && <p className="mt-4 rounded-xl bg-zinc-100 p-4 text-sm font-semibold text-zinc-600">You have used all your quiz attempts for this course.</p>}
