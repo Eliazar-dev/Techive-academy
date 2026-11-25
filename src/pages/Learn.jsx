@@ -156,6 +156,12 @@ export default function Learn() {
     setBusy(true)
     try { await api(`/academy/lessons/${id}/complete/`, { method: 'POST' }); await load() } finally { setBusy(false) }
   }
+  async function downloadNotes(id) {
+    const t = api.tokens.get()
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/academy/sessions/${id}/notes/`, { headers: { Authorization: `Bearer ${t?.access}` } })
+    if (!res.ok) { alert('Could not download the notes.'); return }
+    const url = URL.createObjectURL(await res.blob()); window.open(url); setTimeout(() => URL.revokeObjectURL(url), 60000)
+  }
 
   if (err) return (
     <div className="container-x py-24 text-center"><h1 className="text-2xl font-extrabold">{err.status === 403 ? 'You are not registered for this course' : 'Could not load the course'}</h1>
@@ -190,6 +196,7 @@ export default function Learn() {
                 <div className="flex gap-2">
                   {s.meet_url && <a href={s.meet_url} target="_blank" rel="noreferrer" className="btn-grad !px-4 !py-2">Join Meet</a>}
                   {s.recording_url && <a href={s.recording_url} target="_blank" rel="noreferrer" className="btn-light !px-4 !py-2">Recording</a>}
+                  {s.has_notes_pdf && <button onClick={() => downloadNotes(s.id)} className="btn-light !px-4 !py-2"><Download size={16} />Notes</button>}
                 </div>
               </li>))}
           </ul>
