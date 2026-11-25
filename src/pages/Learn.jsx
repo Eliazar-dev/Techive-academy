@@ -157,10 +157,20 @@ export default function Learn() {
     try { await api(`/academy/lessons/${id}/complete/`, { method: 'POST' }); await load() } finally { setBusy(false) }
   }
   async function downloadNotes(id) {
-    const t = api.tokens.get()
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/academy/sessions/${id}/notes/`, { headers: { Authorization: `Bearer ${t?.access}` } })
-    if (!res.ok) { alert('Could not download the notes.'); return }
-    const url = URL.createObjectURL(await res.blob()); window.open(url); setTimeout(() => URL.revokeObjectURL(url), 60000)
+    try {
+      const t = api.tokens.get()
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/academy/sessions/${id}/notes/`, { headers: { Authorization: `Bearer ${t?.access}` } })
+      if (!res.ok) { alert('Could not download the notes.'); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `session-${id}-notes.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } catch { alert('Could not download the notes. Check your connection and try again.') }
   }
 
   if (err) return (
